@@ -30,98 +30,128 @@ public class RuleExecutor {
 			Rule rule, 
 			Dictionary<IProduct, Pair<Float, Boolean>> productsAndCosts
 	) {
-		Dictionary<ProductType, Integer> types = rule.getProductTypes();
-		Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts = this.findProducts(types, productsAndCosts);
-		Dictionary<IProduct, Pair<Float, Boolean>> result = rule.executeRule(foundProducts);
-		
-		this.setNewCosts(result, productsAndCosts);
+		Boolean productFounds = true;
+		while (productFounds) {
+			Dictionary<ProductType, Range> types = rule.get—ompulsoryTypes();
+			Dictionary<ProductType, Range> optionalTypes = rule.getOptionalTypes();
+			Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> compulsoryProducts = this.findProducts(types, productsAndCosts, true);
+			Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts = this.findProducts(optionalTypes, productsAndCosts, false);
+
+			if ((compulsoryProducts.size() > 0) && rule.validateOptionalProducts(optionalProducts)) {
+				Dictionary<IProduct, Pair<Float, Boolean>> result = rule.executeRule(compulsoryProducts, optionalProducts);
+				this.setNewCosts(result, productsAndCosts);
+			} else {
+				productFounds = false;
+			}
+		}
+
 	}
 	
 	private Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> findProducts(
-			Dictionary<ProductType, Integer> types,
-			Dictionary<IProduct, Pair<Float, Boolean>> productsAndCosts
+			final Dictionary<ProductType, Range> types,
+			final Dictionary<IProduct, Pair<Float, Boolean>> productsAndCosts,
+			final Boolean allNecessary
 	) {
-		// TODO Auto-generated method stub
-		return null;
+		Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts = new Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>>();
+		
+		for (Enumeration<IProduct> enumerator = productsAndCosts.keys(); enumerator.hasMoreElements();) {
+			IProduct product = enumerator.nextElement();
+			Pair<Float, Boolean> properties = productsAndCosts.get(product);
+			Boolean participantToDiscount = properties.getSecond();
+
+			if (participantToDiscount) {
+				Boolean correspondToRule = this.correspondToRule(product, types, foundProducts);
+				if (correspondToRule) {
+					this.addFoundProduct(product, foundProducts);
+				}
+			}
+			if (this.enoughProducts(types, foundProducts)) {
+				break;
+			}
+		}
+		
+		if (this.enoughProducts(types, foundProducts) || !allNecessary) {
+			return foundProducts;
+		}
+		return new Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>>();
+	}
+	
+	private boolean enoughProducts(
+		Dictionary<ProductType, Range> typeAndAmounts,
+		Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts
+	) {
+		boolean enoughProducts = true;
+		for (Enumeration<ProductType> enumerator = typeAndAmounts.keys(); enumerator.hasMoreElements() && enoughProducts;) {
+			ProductType type = enumerator.nextElement();
+			if(!this.productAmountEnough(type, typeAndAmounts, foundProducts)) {
+				enoughProducts = false;
+			}
+		}
+		return enoughProducts;
 	}
 
+	private void addFoundProduct(
+		final IProduct product,
+		Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts
+	) {
+		ProductType type = product.getType();
+		if (foundProducts.containsKey(type)) {
+			Vector<Pair<IProduct, Boolean>> products = foundProducts.get(type);
+			products.addElement(new Pair<IProduct, Boolean>(product, true));
+		} else {
+			Vector<Pair<IProduct, Boolean>> newVector = new Vector<Pair<IProduct, Boolean>>();
+			newVector.add(new Pair<IProduct, Boolean>(product, true));
+			
+			foundProducts.put(type, newVector);
+		}
+		
+	}
+
+	private Boolean correspondToRule(
+		final IProduct product, 
+		final Dictionary<ProductType, Range> types,
+		final Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts
+	) {
+		Boolean typeEqual = false;
+		for (Enumeration<ProductType> enumerator = types.keys(); enumerator.hasMoreElements();) {
+			ProductType type = enumerator.nextElement();
+			if (type == product.getType()) {
+				typeEqual = true;
+				break;
+			}
+		}
+		Boolean amountCorrect = false;
+		if (typeEqual) {
+			amountCorrect = !this.productAmountEnough(product.getType(), types, foundProducts);	
+		}
+		return typeEqual && amountCorrect;
+	}
+
+	private Boolean productAmountEnough(
+		final ProductType type,
+		final Dictionary<ProductType, Range> types,
+		final Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts
+	) {
+		Boolean amountEnough = false;
+		if (foundProducts.containsKey(type)) {
+			Integer productCount = foundProducts.get(type).size();
+			if (types.get(type).contains(productCount)) {
+				amountEnough = true;
+			}
+		}
+
+		return amountEnough;
+	}
+	
 	private void setNewCosts(
 			Dictionary<IProduct, Pair<Float, Boolean>> result,
 			Dictionary<IProduct, Pair<Float, Boolean>> productsAndCosts
 	) {
-		for (Enumeration<IProduct> e = result.keys(); e.hasMoreElements();) {
-			Pair<Float, Boolean> properties = productsAndCosts.get(e);
-			properties.setFirst(result.get(e).getFirst());
-			properties.setSecond(result.get(e).getSecond());
-			e.nextElement();
+		for (Enumeration<IProduct> enumerator = result.keys(); enumerator.hasMoreElements();) {
+			IProduct product = enumerator.nextElement();
+			Pair<Float, Boolean> properties = productsAndCosts.get(product);
+			properties.setFirst(result.get(product).getFirst());
+			properties.setSecond(result.get(product).getSecond());
 		}
 	}
-	
-	
-//	
-//	public Vector<IProduct> applyRules(Vector<IProduct> products) {
-//		Vector<IProduct> productsWithNewCost = new Vector<IProduct>(products);
-//		for (Rule rule : rules) {
-//			Vector<ProductType> productTypes = rule.getProductTypes();
-//			
-//			Vector<Pair<IProduct, Float>> productAfterUseRule = rule.executeRule(this.getPassTypeProducts(productTypes, productsWithNewCost));
-//			productsWithNewCost.clear();
-//			for (Pair<IProduct, Float> productAndCost : productAfterUseRule) {
-//				IProduct product = productAndCost.getFirst();
-//				product.setCurrentCost(productAndCost.getSecond());
-//				productsWithNewCost.add(product);
-//			}
-//			productsWithNewCost.addAll(remainingProduct);
-//			remainingProduct.clear();	
-//		}
-//		return productsWithNewCost;
-//	}
-//	
-//	private static int getTypeIndex(Vector<Pair<ProductType, Vector<IProduct>>> whereSearch, ProductType type) {
-//		for (int i = 0; i < whereSearch.size(); i++) {
-//			Pair<ProductType, Vector<IProduct>> pair = whereSearch.get(i);
-//			if (pair.getFirst() == type) {
-//				return i;
-//			}
-//		}
-//		return -1;
-//	}
-//	
-//	public static Vector<IProduct> getProduct(
-//			ProductType type,
-//			Vector<Pair<ProductType, Vector<IProduct>>> whereSearch
-//	) {
-//		int typeIndex = getTypeIndex(whereSearch, type);
-//		return whereSearch.get(typeIndex).getSecond();
-//	}
-//	
-//	private Vector<Pair<ProductType, Vector<IProduct>>> getPassTypeProducts(
-//		Vector<ProductType> types,
-//		Vector<IProduct> whereTake
-//	) {
-//		Vector<Pair<ProductType, Vector<IProduct>>> selectProducts = new Vector<Pair<ProductType, Vector<IProduct>>>();
-//		
-//		for (IProduct product: whereTake) {
-//			boolean isSelected = false;
-//			for (ProductType type: types) {
-//				if (product.getType() == type) {
-//					int typeIndex = getTypeIndex(selectProducts, type);
-//					if (typeIndex < 0) {
-//						selectProducts.add(new Pair<ProductType, Vector<IProduct>>(type, new Vector<IProduct>()));
-//						selectProducts.get(selectProducts.size() - 1).getSecond().add(product);
-//					} else {
-//						selectProducts.get(typeIndex).getSecond().add(product);
-//					}
-//					isSelected = true;
-//				}
-//			}
-//			if (!isSelected) {
-//				remainingProduct.add(product);
-//			}
-//			
-//		}
-//
-//		
-//		return selectProducts;
-//	}
 }
