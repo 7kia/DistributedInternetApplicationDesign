@@ -363,7 +363,6 @@ class DiscountLibTest {
 		assertEquals(productWitNewCost.get(productList.get(4)).getSecond(), false);
 		assertEquals(productWitNewCost.get(productList.get(5)).getSecond(), false);
 		assertEquals(productWitNewCost.get(productList.get(6)).getSecond(), false);
-
 	}
 
 }
