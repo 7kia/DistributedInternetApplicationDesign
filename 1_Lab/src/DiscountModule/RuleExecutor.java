@@ -60,9 +60,9 @@ public class RuleExecutor {
 			Boolean participantToDiscount = properties.getSecond();
 
 			if (participantToDiscount) {
-				Boolean correspondToRule = this.correspondToRule(product, types, foundProducts);
-				if (correspondToRule) {
-					this.addFoundProduct(product, foundProducts);
+				ProductType type = this.correspondToRule(product, types, foundProducts);
+				if (type != null) {
+					this.addFoundProduct(type, product, foundProducts);
 				}
 			}
 			if (this.enoughProducts(types, foundProducts)) {
@@ -91,10 +91,10 @@ public class RuleExecutor {
 	}
 
 	private void addFoundProduct(
+		final ProductType type,
 		final IProduct product,
 		Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts
 	) {
-		ProductType type = product.getType();
 		if (foundProducts.containsKey(type)) {
 			Vector<Pair<IProduct, Boolean>> products = foundProducts.get(type);
 			products.addElement(new Pair<IProduct, Boolean>(product, true));
@@ -107,15 +107,20 @@ public class RuleExecutor {
 		
 	}
 
-	private Boolean correspondToRule(
+	private ProductType correspondToRule(
 		final IProduct product, 
 		final Dictionary<ProductType, Range> types,
 		final Hashtable<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts
 	) {
 		Boolean typeEqual = false;
+		ProductType type = null;
 		for (Enumeration<ProductType> enumerator = types.keys(); enumerator.hasMoreElements();) {
-			ProductType type = enumerator.nextElement();
-			if (type == product.getType()) {
+			type = enumerator.nextElement();
+			Boolean isAnyType = (type == ProductType.anyType);
+			if ((type == product.getType()) || isAnyType) {
+				if (isAnyType) {
+					type = ProductType.anyType;
+				}
 				typeEqual = true;
 				break;
 			}
@@ -124,7 +129,11 @@ public class RuleExecutor {
 		if (typeEqual) {
 			amountCorrect = !this.productAmountEnough(product.getType(), types, foundProducts);	
 		}
-		return typeEqual && amountCorrect;
+		
+		if(typeEqual && amountCorrect) {
+			return type;
+		}
+		return null;
 	}
 
 	private Boolean productAmountEnough(
