@@ -8,6 +8,13 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import DiscountModule.*;
+import Rule.CulculateCostArguments;
+import Rule.OptionalProductHandler;
+import Rule.Rule;
+import Rule.RuleExecutor;
+import Rule.RuleFunction;
+import Rule.RuleFunctionData;
+import Rule.SearchData;
 
 
 class DiscountLibTest {
@@ -71,9 +78,32 @@ class DiscountLibTest {
 			Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
 		) -> {
 			Dictionary<IProduct, Pair<Float, Boolean>> result = new Hashtable<IProduct, Pair<Float, Boolean>>();
-			setNewCost(this.typeB, 0, 0.9f, compulsoryProducts, result);
-			setNewCost(this.typeA, 0, 0.9f, compulsoryProducts, result);
-
+			
+			SearchData firstAProduct = new SearchData(this.typeA, 0);
+			SearchData firstBProduct = new SearchData(this.typeB, 0);
+			
+			CulculateCostArguments firstAArgs = new CulculateCostArguments(
+				CostGenerator.Method.PercentageDiscount, 
+				10.f, 
+				true,
+				false
+			);
+			CulculateCostArguments firstBArgs = new CulculateCostArguments(
+				CostGenerator.Method.PercentageDiscount, 
+				10.f, 
+				true,
+				false
+			);
+			
+			RuleFunctionData ruleFuncData = new RuleFunctionData(compulsoryProducts, result);
+			try {
+				RuleExecutor.calculateAndSetNewCost(firstAProduct, firstAArgs, ruleFuncData);
+				RuleExecutor.calculateAndSetNewCost(firstBProduct, firstBArgs, ruleFuncData);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			return result;
 		};
 		
@@ -97,9 +127,28 @@ class DiscountLibTest {
 				Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
 		) -> {
 			Dictionary<IProduct, Pair<Float, Boolean>> result = new Hashtable<IProduct, Pair<Float, Boolean>>();
-			setNewCost(typeG, 0, 0.95f, compulsoryProducts, result);
-			setNewCost(typeF, 0, 0.95f, compulsoryProducts, result);
-			setNewCost(typeE, 0, 0.95f, compulsoryProducts, result);
+			
+			SearchData firstEProduct = new SearchData(this.typeE, 0);
+			SearchData firstFProduct = new SearchData(this.typeF, 0);
+			SearchData firstGProduct = new SearchData(this.typeG, 0);
+			
+			CulculateCostArguments args = new CulculateCostArguments(
+				CostGenerator.Method.PercentageDiscount, 
+				5.f, 
+				true,
+				false
+			);
+			RuleFunctionData ruleFuncData = new RuleFunctionData(compulsoryProducts, result);
+
+			try {
+				RuleExecutor.calculateAndSetNewCost(firstEProduct, args, ruleFuncData);
+				RuleExecutor.calculateAndSetNewCost(firstFProduct, args, ruleFuncData);
+				RuleExecutor.calculateAndSetNewCost(firstGProduct, args, ruleFuncData);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			return result;
 		};
 		
@@ -129,16 +178,45 @@ class DiscountLibTest {
 			Vector<Pair<IProduct, Boolean>> kProducts = optionalProducts.get(typeK);
 			Vector<Pair<IProduct, Boolean>> lProducts = optionalProducts.get(typeL);
 			Vector<Pair<IProduct, Boolean>> mProducts = optionalProducts.get(typeM);
-			if ((kProducts != null) || (lProducts != null) || (mProducts != null)) {
-				setNewCost(typeA, 0, 1.f, compulsoryProducts, result);
+			
+			SearchData firstAProduct = new SearchData(this.typeA, 0);
+			SearchData firstKProduct = new SearchData(this.typeK, 0);
+			SearchData firstLProduct = new SearchData(this.typeL, 0);
+			SearchData firstMProduct = new SearchData(this.typeM, 0);
+
+			CulculateCostArguments aArgs = new CulculateCostArguments(
+				CostGenerator.Method.AbsoluteDiscount, 
+				0.f, 
+				true,
+				false
+			);
+			CulculateCostArguments args = new CulculateCostArguments(
+				CostGenerator.Method.PercentageDiscount, 
+				5.f, 
+				true,
+				false
+			);
+			
+			RuleFunctionData compulsoryFuncData = new RuleFunctionData(compulsoryProducts, result);
+			RuleFunctionData optionalFuncData = new RuleFunctionData(optionalProducts, result);
+
+			try {
+				if ((kProducts != null) || (lProducts != null) || (mProducts != null)) {
+					RuleExecutor.calculateAndSetNewCost(firstAProduct, aArgs, compulsoryFuncData);		
+				}
+				if (kProducts != null) {
+					RuleExecutor.calculateAndSetNewCost(firstKProduct, args, optionalFuncData);
+				} else if (lProducts != null) {
+					RuleExecutor.calculateAndSetNewCost(firstLProduct, args, optionalFuncData);
+				} else if (mProducts != null) {
+					RuleExecutor.calculateAndSetNewCost(firstMProduct, args, optionalFuncData);
+				}
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			if (kProducts != null) {
-				setNewCost(typeK, 0, 0.95f, optionalProducts, result);
-			} else if (lProducts != null) {
-				setNewCost(typeL, 0, 0.95f, optionalProducts, result);
-			} else if (mProducts != null) {
-				setNewCost(typeM, 0, 0.95f, optionalProducts, result);
-			}
+
 
 			return result;
 		};
@@ -168,9 +246,28 @@ class DiscountLibTest {
 				Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
 		) -> {
 			Dictionary<IProduct, Pair<Float, Boolean>> result = new Hashtable<IProduct, Pair<Float, Boolean>>();
-			setNewCost(ProductType.anyType, 0, 0.95f, compulsoryProducts, result);
-			setNewCost(ProductType.anyType, 1, 0.95f, compulsoryProducts, result);
-			setNewCost(ProductType.anyType, 2, 0.95f, compulsoryProducts, result);
+			
+			SearchData firstAnyProduct = new SearchData(ProductType.anyType, 0);
+			SearchData secondAnyProduct = new SearchData(ProductType.anyType, 1);
+			SearchData thirdAnyProduct = new SearchData(ProductType.anyType, 2);
+
+			CulculateCostArguments args = new CulculateCostArguments(
+				CostGenerator.Method.PercentageDiscount, 
+				5.f, 
+				true,
+				false
+			);
+			RuleFunctionData compulsoryFuncData = new RuleFunctionData(compulsoryProducts, result);
+
+			try {
+				RuleExecutor.calculateAndSetNewCost(firstAnyProduct, args, compulsoryFuncData);
+				RuleExecutor.calculateAndSetNewCost(secondAnyProduct, args, compulsoryFuncData);
+				RuleExecutor.calculateAndSetNewCost(thirdAnyProduct, args, compulsoryFuncData);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 			return result;
 		};
 		
@@ -197,20 +294,7 @@ class DiscountLibTest {
 		this.discountSystem = new RuleExecutor(rules);
 	}
 	
-	private void setNewCost(
-		ProductType type,
-		final Integer productNumber,
-		final Float costFactor,
-		Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> foundProducts,
-		Dictionary<IProduct, Pair<Float, Boolean>> result
-	) {
-		Vector<Pair<IProduct, Boolean>> aProducts = foundProducts.get(type);
-		if (aProducts != null) {
-			IProduct productA = aProducts.get(productNumber).getFirst();
-			Pair<Float, Boolean> aProperty = new Pair<Float, Boolean>(productA.getCurrentCost() * costFactor, false);
-			result.put(productA, aProperty);
-		}
-	};
+	
 	
 	@Test
 	void test1Rule() {

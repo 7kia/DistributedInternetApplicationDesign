@@ -1,8 +1,13 @@
-package DiscountModule;
+package Rule;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.function.Function;
+
+import DiscountModule.IProduct;
+import DiscountModule.Pair;
+import DiscountModule.ProductType;
+import DiscountModule.Range;
 
 @FunctionalInterface
 public interface RuleFunction 
