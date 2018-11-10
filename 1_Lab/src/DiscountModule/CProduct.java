@@ -1,4 +1,9 @@
 package DiscountModule;
+/*
+ * Content type and currentCost. Start cost content to type.
+ * 
+ * @see ProductType
+ */
 public class CProduct implements IProduct {
 	private ProductType type;
 	private Float currentCost;

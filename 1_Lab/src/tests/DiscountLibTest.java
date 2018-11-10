@@ -9,6 +9,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import DiscountModule.*;
 import Rule.CulculateCostArguments;
+import Rule.GenerateCostFunc;
 import Rule.OptionalProductHandler;
 import Rule.Rule;
 import Rule.RuleExecutor;
@@ -50,18 +51,40 @@ class DiscountLibTest {
 	private Rule rule4;
 	private Rule rule5;
 	private RuleExecutor discountSystem;
+	
+	/*
+	 * Custom set-cost functions(see CostGenerator) Test Data
+	 * Prefix "standard" is used for brevity 
+	 */
+	private RuleFunction ruleFunctionStandard;
+	private OptionalProductHandler handlerStandard;
+	private Dictionary<ProductType, Range> ruleStandardTypes;
+	private Dictionary<ProductType, Range> ruleStandardOptionalTypes;
+	private Rule ruleStandard;
+	/*
+	 * Custom set-cost functions(see interface GenerateCostFunc) Test Data
+	 * Prefix "Custom" is used for brevity 
+	 */
+	private RuleFunction ruleFunctionCustom;
+	private OptionalProductHandler handlerCustom;
+	private Dictionary<ProductType, Range> ruleCustomTypes;
+	private Dictionary<ProductType, Range> ruleCustomOptionalTypes;
+	private Rule ruleCustom;
+
 	public DiscountLibTest() {
 		this.initTypes();
 		this.initTest1Data();
 		this.initTest3Data();
 		this.initTest4Data();
 		this.initTest5Data();
+		this.initStandartSetCostFuncTestData();
+		this.initCustomSetCostFuncTestData();
 		this.initComplexTestData();
 	}
 
 	private void initTypes() {
 		this.typeA = new ProductType("A", 100.0f);
-		this.typeB = new ProductType("C", 100.0f);
+		this.typeB = new ProductType("B", 100.0f);
 		this.typeC = new ProductType("C", 100.0f);
 		this.typeD = new ProductType("D", 100.0f);
 		this.typeE = new ProductType("E", 100.0f);
@@ -283,6 +306,109 @@ class DiscountLibTest {
 		
 		this.rule5 = new Rule(ruleFunction5, handler5, rule5Types, rule5OptionalTypes);
 	}
+
+	private void initStandartSetCostFuncTestData() {
+		this.ruleFunctionStandard = (
+				Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> compulsoryProducts,
+				Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
+		) -> {
+			Dictionary<IProduct, Pair<Float, Boolean>> result = new Hashtable<IProduct, Pair<Float, Boolean>>();
+			
+			SearchData firstAnyProduct = new SearchData(ProductType.anyType, 0);
+			SearchData secondAnyProduct = new SearchData(ProductType.anyType, 1);
+			SearchData thirdAnyProduct = new SearchData(ProductType.anyType, 2);
+
+			CulculateCostArguments args1 = new CulculateCostArguments(
+				CostGenerator.Method.AbsoluteDiscount, 
+				5.f, 
+				true,
+				false
+			);
+			CulculateCostArguments args2 = new CulculateCostArguments(
+				CostGenerator.Method.CostFactor, 
+				0.5f, 
+				true,
+				false
+			);
+			CulculateCostArguments args3 = new CulculateCostArguments(
+				CostGenerator.Method.PercentageDiscount, 
+				25.f, 
+				true,
+				false
+			);
+			RuleFunctionData compulsoryFuncData = new RuleFunctionData(compulsoryProducts, result);
+
+			try {
+				RuleExecutor.calculateAndSetNewCost(firstAnyProduct, args1, compulsoryFuncData);
+				RuleExecutor.calculateAndSetNewCost(secondAnyProduct, args2, compulsoryFuncData);
+				RuleExecutor.calculateAndSetNewCost(thirdAnyProduct, args3, compulsoryFuncData);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return result;
+		};
+		
+		this.handlerStandard = (
+			Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
+		) -> {
+			return true;
+		};
+		
+		this.ruleStandardTypes = new Hashtable<ProductType, Range>();
+		this.ruleStandardTypes.put(ProductType.anyType, new Range(3,3));
+		this.ruleStandardOptionalTypes = new Hashtable<ProductType, Range>();
+		
+		this.ruleStandard = new Rule(
+			ruleFunctionStandard,
+			handlerStandard, 
+			ruleStandardTypes,
+			ruleStandardOptionalTypes
+		);
+	}
+	
+	private void initCustomSetCostFuncTestData() {
+		this.ruleFunctionCustom = (
+				Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> compulsoryProducts,
+				Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
+		) -> {
+			Dictionary<IProduct, Pair<Float, Boolean>> result = new Hashtable<IProduct, Pair<Float, Boolean>>();
+			
+			SearchData searchData = new SearchData(ProductType.anyType, 0);
+			GenerateCostFunc customFunc = (Float currentCost, Float startCost) -> {
+				return currentCost + startCost;
+			};
+
+			RuleFunctionData compulsoryFuncData = new RuleFunctionData(compulsoryProducts, result);
+
+			try {
+				RuleExecutor.setNewCost(searchData, customFunc, false, compulsoryFuncData);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return result;
+		};
+		
+		this.handlerCustom = (
+			Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
+		) -> {
+			return true;
+		};
+		
+		this.ruleCustomTypes = new Hashtable<ProductType, Range>();
+		this.ruleCustomTypes.put(ProductType.anyType, new Range(1,1));
+		this.ruleCustomOptionalTypes = new Hashtable<ProductType, Range>();
+		
+		this.ruleCustom = new Rule(
+			ruleFunctionCustom,
+			handlerCustom, 
+			ruleCustomTypes,
+			ruleCustomOptionalTypes
+		);
+	}
 	
 	
 	private void initComplexTestData() {
@@ -412,6 +538,46 @@ class DiscountLibTest {
 		assertEquals(productWitNewCost.get(productList.get(1)).getSecond(), false);
 		assertEquals(productWitNewCost.get(productList.get(2)).getSecond(), false);
 		assertEquals(productWitNewCost.get(productList.get(3)).getSecond(), true);
+	}
+	
+	@Test
+	void StandartSetCostFuncTest() {
+		Vector<IProduct> productList = new Vector<IProduct>();
+		productList.add(new CProduct(typeA));
+		productList.add(new CProduct(typeB));
+		productList.add(new CProduct(typeC));
+		
+		Vector<Rule> rules = new Vector<Rule>();
+		rules.add(ruleStandard);
+		RuleExecutor discountSystem = new RuleExecutor(rules);
+		Dictionary<IProduct, Pair<Float, Boolean>> productWitNewCost = discountSystem.applyRules(productList);
+		
+		final Float costA = 95.f;
+		final Float costB = 50.f;
+		final Float costC = 75.f;
+		assertEquals(productWitNewCost.get(productList.get(0)).getFirst(), costA);
+		assertEquals(productWitNewCost.get(productList.get(1)).getFirst(), costB);
+		assertEquals(productWitNewCost.get(productList.get(2)).getFirst(), costC);
+
+		assertEquals(productWitNewCost.get(productList.get(0)).getSecond(), false);
+		assertEquals(productWitNewCost.get(productList.get(1)).getSecond(), false);
+		assertEquals(productWitNewCost.get(productList.get(2)).getSecond(), false);
+	}
+	
+	@Test
+	void CustomSetCostFuncTest() {
+		Vector<IProduct> productList = new Vector<IProduct>();
+		productList.add(new CProduct(typeA));
+		
+		Vector<Rule> rules = new Vector<Rule>();
+		rules.add(ruleCustom);
+		RuleExecutor discountSystem = new RuleExecutor(rules);
+		Dictionary<IProduct, Pair<Float, Boolean>> productWitNewCost = discountSystem.applyRules(productList);
+		
+		final Float costA = 200.f;
+		assertEquals(productWitNewCost.get(productList.get(0)).getFirst(), costA);
+		
+		assertEquals(productWitNewCost.get(productList.get(0)).getSecond(), false);
 	}
 	
 	@Test

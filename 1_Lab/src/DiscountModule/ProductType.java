@@ -1,5 +1,11 @@
 package DiscountModule;
 
+/*
+ * @param name - product name. Type - string.
+ * @param cost - Type - float number.
+ * 
+ * @see IProduct
+ */
 public class ProductType {
 	public static final ProductType anyType = new ProductType("Any", 1.0f);
 	private String name;

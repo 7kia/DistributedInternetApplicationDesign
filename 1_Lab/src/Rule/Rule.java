@@ -1,40 +1,27 @@
 package Rule;
 import java.util.Dictionary;
-import java.util.Hashtable;
 import java.util.Vector;
-import java.util.function.Function;
 
 import DiscountModule.IProduct;
 import DiscountModule.Pair;
 import DiscountModule.ProductType;
 import DiscountModule.Range;
 
-@FunctionalInterface
-public interface RuleFunction 
-{ 
-	Dictionary<IProduct, Pair<Float, Boolean>> execute(
-		Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> compulsoryProducts,
-		Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
-	); 
-} 
-
-@FunctionalInterface
-public interface OptionalProductHandler 
-{ 
-	Boolean canExecuteRule(
-		Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
-	); 
-} 
-
+/*
+ * Rule for set discount.
+ * 
+ * @param rule - content actions necessary for execute rule
+ * @param optionalProductHandler - see OptionalProductHandler
+ * @param compulsoryTypes - product type which have count 
+ * more zero(set by range with min and max value)
+ * @param optionalTypes - product type which have count zero or more
+ * 
+ * @see RuleFunction
+ * @see OptionalProductHandler
+ */
 public class Rule {
-	// Input: key: type, value: pairs<product and participant to discount(source value = true)
-	// Output: key: product, value: pairs with new cost and  participant to discount
 	private RuleFunction rule;
-	private OptionalProductHandler handler;
-	// Amount compulsory product more or equal one
-	// Amount optional product more or equal zero
-	// ProductType: X(specific) or null(any)
-	// Range(amount): amount contains to [min ; max]
+	private OptionalProductHandler optionalProductHandler;
 	private Dictionary<ProductType, Range> compulsoryTypes;
 	private Dictionary<ProductType, Range> optionalTypes;
 	public Rule(
@@ -44,7 +31,7 @@ public class Rule {
 		Dictionary<ProductType, Range> optionalTypes
 	) {
 		this.rule = rule;
-		this.handler = handler;
+		this.optionalProductHandler = handler;
 		this.compulsoryTypes = productTypes;
 		this.optionalTypes = optionalTypes;
 	}
@@ -64,6 +51,6 @@ public class Rule {
 	public Boolean validateOptionalProducts(
 		Dictionary<ProductType, Vector<Pair<IProduct, Boolean>>> optionalProducts
 	) {
-		return this.handler.canExecuteRule(optionalProducts);
+		return this.optionalProductHandler.canExecuteRule(optionalProducts);
 	}
 }

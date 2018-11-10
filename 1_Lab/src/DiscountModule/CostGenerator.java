@@ -1,10 +1,30 @@
 package DiscountModule;
 
 /**
- * Class CostGenerator
  * Generate product cost. Content several function for generation of cost.
  */
 public class CostGenerator {
+	/*
+	 * Use for cost setting.
+	 * <pre>
+	 * {@code
+	 * CulculateCostArguments args = new CulculateCostArguments(
+	 *		CostGenerator.Method.CostFactor, 
+	 *		0.5f, 
+	 *		true,
+	 *		false
+	 * );
+	 * try {
+	 *		RuleExecutor.calculateAndSetNewCost(firstAnyProduct, args, compulsoryFuncData);
+	 * } catch (Exception e) {	
+	 * 	 e.printStackTrace();
+	 * }
+	 * }
+	 * </pre>
+	 * 
+	 * @see RuleExecutor#calculateAndSetNewCost
+	 * @see CulculateCostArguments
+	*/
 	public enum Method {
 		CostFactor,
 		PercentageDiscount,
@@ -63,10 +83,10 @@ public class CostGenerator {
 	) {
 		if (useStartCost) {
 			final Float startCost = product.getStartCost();
-			return startCost + discount;
+			return startCost - discount;
 		} 
 		final Float currentCost = product.getCurrentCost();
-		return currentCost + discount;
+		return currentCost - discount;
 	}
 	
 }
