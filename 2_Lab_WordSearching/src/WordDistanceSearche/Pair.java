@@ -1,3 +1,4 @@
+package WordDistanceSearche;
 public class Pair<X, Y> { 
   private X first; 
   private Y second; 

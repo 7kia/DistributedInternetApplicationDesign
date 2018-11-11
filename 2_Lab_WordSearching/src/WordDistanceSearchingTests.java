@@ -2,8 +2,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-class WordDistanceSearchingTests {
+import WordDistanceSearche.PackageCreateProperty;
+import WordDistanceSearche.Pair;
+import WordDistanceSearche.SearchWords;
+import WordDistanceSearche.WordDistanceSearcher;
 
+class WordDistanceSearchingTests {
+	public WordDistanceSearcher wordDistanceSearcher;
+	
+	public WordDistanceSearchingTests() {
+		this.wordDistanceSearcher = new WordDistanceSearcher();
+	}
 	@Test
 	void min_and_max_distance_equal_when_one_word1_and_word2() {
 		final String text = "Today is very good a sunny day";
@@ -11,11 +20,16 @@ class WordDistanceSearchingTests {
 		final String word2 = "Today";
 
 		final Integer packageCount = 2;
-		Pair<Integer, Integer> distances = WordDistanceSearcher.foundDistanceBetween(
-			word1, 
-			word2, 
+		
+		SearchWords words = new SearchWords(word1, word2);
+		PackageCreateProperty packageCreateProperty = new PackageCreateProperty(
 			packageCount,
-			text.length() / packageCount
+			(Integer)text.length() / packageCount
+		);
+		Pair<Integer, Integer> distances = wordDistanceSearcher.foundDistanceBetweenWords(
+			words, 
+			packageCreateProperty, 
+			text
 		);
 		
 		final Integer expectedMin = 5;
@@ -31,11 +45,15 @@ class WordDistanceSearchingTests {
 		final String word2 = "Today";
 
 		final Integer packageCount = 2;
-		Pair<Integer, Integer> distances = WordDistanceSearcher.foundDistanceBetween(
-			word1, 
-			word2, 
+		SearchWords words = new SearchWords(word1, word2);
+		PackageCreateProperty packageCreateProperty = new PackageCreateProperty(
 			packageCount,
-			text.length() / packageCount
+			(Integer)text.length() / packageCount
+		);
+		Pair<Integer, Integer> distances = wordDistanceSearcher.foundDistanceBetweenWords(
+			words, 
+			packageCreateProperty, 
+			text
 		);
 		
 		final Integer expectedMin = 5;
