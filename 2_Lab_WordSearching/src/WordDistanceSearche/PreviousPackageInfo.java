@@ -6,10 +6,13 @@ package WordDistanceSearche;
  */
 public class PreviousPackageInfo {
 	public Integer lastWordIndex;
-	public Integer lastPartialWordIndex;
+	public Pair<String, Integer> lastPartialWord;
 	
-	public PreviousPackageInfo(final Integer lastWordIndex, final Integer lastPartialWordIndex) {
+	public PreviousPackageInfo(
+		final Integer lastWordIndex,
+		Pair<String, Integer> lastPartialWord 
+	) {
 		this.lastWordIndex = lastWordIndex;
-		this.lastPartialWordIndex = lastPartialWordIndex;
+		this.lastPartialWord = lastPartialWord;
 	}
 }

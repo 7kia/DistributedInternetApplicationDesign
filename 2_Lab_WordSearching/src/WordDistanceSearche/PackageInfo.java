@@ -8,7 +8,7 @@ public class PackageInfo {
 	public PackageInfo(
 			final String referenceOnText,
 			final Integer packageIndex,
-			final PreviousPackageInfo previousPackageInfo
+			PreviousPackageInfo previousPackageInfo
 	) {
 		this.referenceOnText = referenceOnText;
 		this.packageIndex = packageIndex;

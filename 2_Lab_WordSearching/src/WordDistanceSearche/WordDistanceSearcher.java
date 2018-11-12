@@ -3,9 +3,10 @@ package WordDistanceSearche;
 import java.util.Vector;
 
 public class WordDistanceSearcher {
+	private final static Integer NOT_FOUND = -1;
+
 	private Integer packageCount;
 	private Integer packageSize;
-	
 	public Pair<Integer, Integer> foundDistanceBetweenWords(
 		SearchWords words, 
 		PackageCreateProperty packageCreateProperty,
@@ -14,11 +15,14 @@ public class WordDistanceSearcher {
 		this.packageCount = packageCreateProperty.packageCount;
 		this.packageSize = packageCreateProperty.packageSize;
 
-		PreviousPackageInfo previousPackageInfo = new PreviousPackageInfo(-1, -1);
+		PreviousPackageInfo previousPackageInfo = new PreviousPackageInfo(
+			NOT_FOUND, 
+			new Pair<String, Integer>(null, NOT_FOUND)
+		);
 		Pair<Integer, Integer> result = new Pair<Integer, Integer>(Integer.MAX_VALUE, Integer.MIN_VALUE);
 		for(int packageIndex = 0; packageIndex < packageCount; packageIndex++) {
 			PackageInfo packageInfo = new PackageInfo(
-				text,//this.extractTextForPackage(text, packageIndex), 
+				text,
 				packageIndex,
 				previousPackageInfo
 			);
@@ -30,50 +34,82 @@ public class WordDistanceSearcher {
 				),
 				result
 			);
+			previousPackageInfo = this.generatePreviousPackageInfo(packageInfo);
 		}
 		return result;
 	}
 	
 	private String extractTextForPackage(final String sourceText, final Integer packageIndex) {
 		final Integer beginIndex = packageIndex * packageSize;
-		return sourceText.substring(beginIndex, beginIndex + (packageSize - 1));
+		Integer endIndex = beginIndex + packageSize;
+		if (endIndex >= sourceText.length()) {
+			endIndex = sourceText.length();
+		}
+		return sourceText.substring(beginIndex, endIndex);
 	}
 	
 	private Pair<Integer, Integer> processPackage(
 		final SearchWords words, 
-		final PackageInfo packageInfo,
-		final Pair<Integer, Integer> previousResult
+		PackageInfo packageInfo,
+		Pair<Integer, Integer> previousResult
 	) {
-		Pair<Integer, Integer> result = new Pair<Integer, Integer>(0, 0);
+		Pair<Integer, Integer> result = new Pair<Integer, Integer>(Integer.MAX_VALUE, Integer.MIN_VALUE);
 		
-		PreviousPackageInfo previousPackageInfo = new PreviousPackageInfo(-1, -1);
-		PackageData packageData = this.extractPackageData(packageInfo, previousPackageInfo);
+		PackageData packageData = this.extractPackageData(packageInfo, packageInfo.previousPackageInfo);
 		Vector<Integer> word1Positions = this.foundPositions(words.word1, packageData); 
 		
-		for(int packageIndex = 0; packageIndex < packageCount; packageIndex++) {
-			PackageInfo currentPackageInfo = new PackageInfo(packageInfo.referenceOnText, packageIndex, previousPackageInfo);
-			this.processPackageAndFoundDistance(
-				words, 
-				currentPackageInfo, 
-				previousPackageInfo,
-				word1Positions,
-				previousResult
+		
+		
+		if (word1Positions.size() > 0) {
+			PreviousPackageInfo previousPackageInfo = new PreviousPackageInfo(
+				NOT_FOUND, 
+				new Pair<String, Integer>(null, NOT_FOUND)
 			);
-			previousPackageInfo = this.generatePreviousPackageInfo(currentPackageInfo);
+			PackageInfo currentPackageInfo = null;
+			for(int packageIndex = 0; packageIndex < packageCount; packageIndex++) {
+				currentPackageInfo = new PackageInfo(
+					packageInfo.referenceOnText,
+					packageIndex,
+					previousPackageInfo
+				);
+				result = this.setMinAndMax(
+					this.processSecondPackageAndFoundDistance(
+						words, 
+						currentPackageInfo, 
+						previousPackageInfo,
+						word1Positions,
+						previousResult
+					), 
+					result
+				);
+				previousPackageInfo = this.generatePreviousPackageInfo(currentPackageInfo);
+			}
 		}
+		
 		return result;
 	}
 
 	private PreviousPackageInfo generatePreviousPackageInfo(final PackageInfo currentPackageInfo) {
+//		final Integer lastWordIndex = this.getLastWordIndex(currentPackageInfo);
+//		final Integer lastPartialWordIndex = this.getLastPartialWordIndex(currentPackageInfo);
+//		PreviousPackageInfo previousPackageInfo = new PreviousPackageInfo(
+//				NOT_FOUND, 
+//				new Pair<String, Integer>(null, NOT_FOUND)
+//			);
+		return currentPackageInfo.previousPackageInfo;
+	}
+	
+	private Integer getLastWordIndex(final PackageInfo currentPackageInfo) {
 		Vector<Pair<String, Integer>> foundedWords = this.foundWords(currentPackageInfo);
-		final Integer lastWordIndex = foundedWords.get(foundedWords.size() - 1).getSecond();
-		Integer lastPartialWordIndex = -1;
-		
-		final String text = currentPackageInfo.referenceOnText;
-		if (text.substring(text.length() - 1) == " ") {
-			lastPartialWordIndex = lastWordIndex;
+		return foundedWords.get(foundedWords.size() - 1).getSecond();
+	}
+	
+	private Integer getLastPartialWordIndex(final PackageInfo currentPackageInfo) {
+		final String text = this.extractTextForPackage(currentPackageInfo.referenceOnText, currentPackageInfo.packageIndex);
+		if (!text.substring(text.length() - 1).equals(" ")) {
+			return this.getLastWordIndex(currentPackageInfo);
 		}
-		return new PreviousPackageInfo(lastWordIndex, lastPartialWordIndex);
+		return NOT_FOUND;
 	}
 	
 	private Vector<Pair<String, Integer>> foundWords(final PackageInfo currentPackageInfo) {
@@ -86,19 +122,46 @@ public class WordDistanceSearcher {
 		Integer index = 0;
 		for(String word : words) {
 			result.add(new Pair<String, Integer>(word, index));
+			index++;
 		}
 		return result;
 	}
 	
 	private PackageData extractPackageData(
-		PackageInfo packageInfo, 
+		final PackageInfo packageInfo, 
 		PreviousPackageInfo previousPackageInfo
 	) {
+		Vector<Pair<String, Integer>> foundWords = this.foundWords(packageInfo);
+		int start = 0;
+		if (previousPackageInfo.lastPartialWord.getFirst() != null) {
+			final Pair<String, Integer> partialWord = previousPackageInfo.lastPartialWord;
+			final Pair<String, Integer> firstWord = foundWords.get(0);
+			final Pair<String, Integer> fullWord = new Pair<String, Integer>(
+				partialWord.getFirst() + firstWord.getFirst(),
+				partialWord.getSecond()
+			);
+			foundWords.set(0, fullWord);
+			start = 1;
+		}
+		
+		final Integer lastPartialWordIndex = this.getLastPartialWordIndex(packageInfo);
+		final Boolean isLastPackage = (packageInfo.packageIndex >= (this.packageCount - 1));
+		
+		for(int i = start; i < foundWords.size(); i++) {
+			foundWords.get(i).setSecond(this.getGlobalIndex(i, packageInfo));
+		}
+		if (!isLastPackage && (lastPartialWordIndex != NOT_FOUND)) {
+			previousPackageInfo.lastPartialWord = foundWords.remove(foundWords.size() - 1);
+		}
+		if (isLastPackage) {//|| (lastPartialWordIndex != NOT_FOUND)
+			previousPackageInfo.lastPartialWord = new Pair<String, Integer>(null, NOT_FOUND);
+		}
+		previousPackageInfo.lastWordIndex = foundWords.get(foundWords.size() - 1).getSecond();
 		return new PackageData(
-			this.foundWords(packageInfo),
+			foundWords,
 			packageInfo.packageIndex,
 			previousPackageInfo.lastWordIndex,
-			previousPackageInfo.lastPartialWordIndex
+			previousPackageInfo.lastPartialWord
 		);
 	}
 	
@@ -108,14 +171,14 @@ public class WordDistanceSearcher {
 	) {
 		Vector<Integer> result = new Vector<Integer>();
 		for(Pair<String, Integer> pair : packageData.wordList) {
-			if (pair.getFirst() == word) {
+			if (pair.getFirst().equals(word)) {
 				result.add(pair.getSecond());
 			}
 		}
 		return result;
 	}
 	
-	private Pair<Integer, Integer> processPackageAndFoundDistance(
+	private Pair<Integer, Integer> processSecondPackageAndFoundDistance(
 		final SearchWords words,
 		final PackageInfo packageInfo,
 		PreviousPackageInfo previousPackageInfo,
@@ -148,9 +211,8 @@ public class WordDistanceSearcher {
 		if(searchWordPositions.size() > 0) {
 			for(int sourceIndex = 0; sourceIndex < sourcewordPositions.size(); sourceIndex++) {
 				for(int index = 0; index < searchWordPositions.size(); index++) {
-					final Integer globalIndex = this.getGlobalIndex(index, packageInfo);
-					final Integer distance = Math.abs(sourcewordPositions.get(sourceIndex) - globalIndex); 
-					result = this.setMinAndMax(distance, result);
+					final Integer distance = Math.abs(sourcewordPositions.get(sourceIndex) - searchWordPositions.get(index)); 
+					result = this.setMinAndMax(distance - 1, result);
 				}
 			}
 
@@ -160,7 +222,11 @@ public class WordDistanceSearcher {
 	}
 	
 	private Integer getGlobalIndex(final Integer index, final PackageInfo packageInfo) {
-		return index + packageInfo.previousPackageInfo.lastWordIndex;
+		if (packageInfo.previousPackageInfo.lastWordIndex >= 0) {
+			return index + packageInfo.previousPackageInfo.lastWordIndex + 1;
+		}
+		return index;
+		
 	}
 	
 	private Pair<Integer, Integer> setMinAndMax(

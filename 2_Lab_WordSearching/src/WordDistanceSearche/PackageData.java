@@ -10,9 +10,9 @@ public class PackageData extends PreviousPackageInfo {
 			final Vector<Pair<String, Integer>> wordList,
 			final Integer packageIndex,
 			final Integer lastWordIndex,
-			final Integer lastPartialWordIndex
+			final Pair<String, Integer> lastPartialWord 
 	) {
-		super(lastWordIndex, lastPartialWordIndex);
+		super(lastWordIndex, lastPartialWord);
 		this.wordList = wordList;
 		this.packageIndex = packageIndex;
 	}

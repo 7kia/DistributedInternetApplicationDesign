@@ -13,18 +13,28 @@ class WordDistanceSearchingTests {
 	public WordDistanceSearchingTests() {
 		this.wordDistanceSearcher = new WordDistanceSearcher();
 	}
+	
+	private Integer getPackageCount(final String text, final Integer packageSize) {
+		Integer packageCount = (Integer)text.length() / packageSize;
+		if ((Integer)text.length() % packageSize > 0) {
+			packageCount += 1;
+		}
+		return packageCount;
+	}
+	 
 	@Test
 	void min_and_max_distance_equal_when_one_word1_and_word2() {
 		final String text = "Today is very good a sunny day";
 		final String word1 = "day";
 		final String word2 = "Today";
 
-		final Integer packageCount = 2;
-		
+		final Integer packageSize = 16;
+		final Integer packageCount = this.getPackageCount(text, packageSize);
 		SearchWords words = new SearchWords(word1, word2);
+		
 		PackageCreateProperty packageCreateProperty = new PackageCreateProperty(
 			packageCount,
-			(Integer)text.length() / packageCount
+			packageSize
 		);
 		Pair<Integer, Integer> distances = wordDistanceSearcher.foundDistanceBetweenWords(
 			words, 
@@ -44,11 +54,13 @@ class WordDistanceSearchingTests {
 		final String word1 = "day";
 		final String word2 = "Today";
 
-		final Integer packageCount = 2;
+		final Integer packageSize = 16;
+		final Integer packageCount = this.getPackageCount(text, packageSize);
 		SearchWords words = new SearchWords(word1, word2);
+		
 		PackageCreateProperty packageCreateProperty = new PackageCreateProperty(
 			packageCount,
-			(Integer)text.length() / packageCount
+			packageSize
 		);
 		Pair<Integer, Integer> distances = wordDistanceSearcher.foundDistanceBetweenWords(
 			words, 
