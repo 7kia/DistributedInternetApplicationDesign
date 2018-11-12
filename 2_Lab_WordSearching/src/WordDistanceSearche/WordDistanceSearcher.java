@@ -4,6 +4,10 @@ import java.util.Vector;
 
 public class WordDistanceSearcher {
 	private final static Integer NOT_FOUND = -1;
+	private final static Pair<Integer, Integer> NOT_FOUND_DISTANCES = new Pair<Integer, Integer>(
+		Integer.MAX_VALUE,
+		Integer.MIN_VALUE
+	);
 
 	private Integer packageCount;
 	private Integer packageSize;
@@ -19,7 +23,7 @@ public class WordDistanceSearcher {
 			NOT_FOUND, 
 			new Pair<String, Integer>(null, NOT_FOUND)
 		);
-		Pair<Integer, Integer> result = new Pair<Integer, Integer>(Integer.MAX_VALUE, Integer.MIN_VALUE);
+		Pair<Integer, Integer> result = NOT_FOUND_DISTANCES;
 		for(int packageIndex = 0; packageIndex < packageCount; packageIndex++) {
 			PackageInfo packageInfo = new PackageInfo(
 				text,
@@ -34,31 +38,21 @@ public class WordDistanceSearcher {
 				),
 				result
 			);
-			previousPackageInfo = this.generatePreviousPackageInfo(packageInfo);
+			previousPackageInfo = packageInfo.previousPackageInfo;
 		}
 		return result;
 	}
 	
-	private String extractTextForPackage(final String sourceText, final Integer packageIndex) {
-		final Integer beginIndex = packageIndex * packageSize;
-		Integer endIndex = beginIndex + packageSize;
-		if (endIndex >= sourceText.length()) {
-			endIndex = sourceText.length();
-		}
-		return sourceText.substring(beginIndex, endIndex);
-	}
 	
 	private Pair<Integer, Integer> processPackage(
 		final SearchWords words, 
 		PackageInfo packageInfo,
 		Pair<Integer, Integer> previousResult
 	) {
-		Pair<Integer, Integer> result = new Pair<Integer, Integer>(Integer.MAX_VALUE, Integer.MIN_VALUE);
+		Pair<Integer, Integer> result = NOT_FOUND_DISTANCES;
 		
 		PackageData packageData = this.extractPackageData(packageInfo, packageInfo.previousPackageInfo);
 		Vector<Integer> word1Positions = this.foundPositions(words.word1, packageData); 
-		
-		
 		
 		if (word1Positions.size() > 0) {
 			PreviousPackageInfo previousPackageInfo = new PreviousPackageInfo(
@@ -82,23 +76,22 @@ public class WordDistanceSearcher {
 					), 
 					result
 				);
-				previousPackageInfo = this.generatePreviousPackageInfo(currentPackageInfo);
+				previousPackageInfo = currentPackageInfo.previousPackageInfo;
 			}
 		}
 		
 		return result;
 	}
-
-	private PreviousPackageInfo generatePreviousPackageInfo(final PackageInfo currentPackageInfo) {
-//		final Integer lastWordIndex = this.getLastWordIndex(currentPackageInfo);
-//		final Integer lastPartialWordIndex = this.getLastPartialWordIndex(currentPackageInfo);
-//		PreviousPackageInfo previousPackageInfo = new PreviousPackageInfo(
-//				NOT_FOUND, 
-//				new Pair<String, Integer>(null, NOT_FOUND)
-//			);
-		return currentPackageInfo.previousPackageInfo;
-	}
 	
+	private String extractTextForPackage(final String sourceText, final Integer packageIndex) {
+		final Integer beginIndex = packageIndex * packageSize;
+		Integer endIndex = beginIndex + packageSize;
+		if (endIndex >= sourceText.length()) {
+			endIndex = sourceText.length();
+		}
+		return sourceText.substring(beginIndex, endIndex);
+	}
+
 	private Integer getLastWordIndex(final PackageInfo currentPackageInfo) {
 		Vector<Pair<String, Integer>> foundedWords = this.foundWords(currentPackageInfo);
 		return foundedWords.get(foundedWords.size() - 1).getSecond();
@@ -153,7 +146,7 @@ public class WordDistanceSearcher {
 		if (!isLastPackage && (lastPartialWordIndex != NOT_FOUND)) {
 			previousPackageInfo.lastPartialWord = foundWords.remove(foundWords.size() - 1);
 		}
-		if (isLastPackage) {//|| (lastPartialWordIndex != NOT_FOUND)
+		if (isLastPackage) {
 			previousPackageInfo.lastPartialWord = new Pair<String, Integer>(null, NOT_FOUND);
 		}
 		previousPackageInfo.lastWordIndex = foundWords.get(foundWords.size() - 1).getSecond();
@@ -206,7 +199,7 @@ public class WordDistanceSearcher {
 		final Vector<Integer> sourcewordPositions,
 		final Vector<Integer> searchWordPositions
 	) {
-		Pair<Integer, Integer> result = new Pair<Integer, Integer>(Integer.MAX_VALUE, Integer.MIN_VALUE);
+		Pair<Integer, Integer> result = NOT_FOUND_DISTANCES;
 		
 		if(searchWordPositions.size() > 0) {
 			for(int sourceIndex = 0; sourceIndex < sourcewordPositions.size(); sourceIndex++) {

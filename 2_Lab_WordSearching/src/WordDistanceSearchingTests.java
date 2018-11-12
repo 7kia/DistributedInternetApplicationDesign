@@ -73,9 +73,4 @@ class WordDistanceSearchingTests {
 		assertEquals(expectedMin, distances.getFirst());
 		assertEquals(expectedMax, distances.getSecond());
 	}
-	
-	@Test
-	void test_example() {
-		fail("Not yet implemented");
-	}
 }
